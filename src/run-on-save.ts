@@ -1,8 +1,9 @@
 import * as path from 'path'
 import {exec, execSync} from 'child_process'
+
 import * as vscode from 'vscode'
 import {encodeCommandLineToBeQuoted, decodeQuotedCommandLine} from './util'
-
+const async_exec = require('await-exec')
 
 export interface Configuration {
 	statusMessageTimeout: number
@@ -230,7 +231,7 @@ export class RunOnSaveExtension {
 		}
 	}
 
-	private runBackendCommand(command: BackendCommand) {
+	private async runBackendCommand(command: BackendCommand) {
 		this.showChannelMessage(`Running "${command.command}"`)
 
 		if (command.runningStatusMessage) {
@@ -239,7 +240,7 @@ export class RunOnSaveExtension {
 
 		if (command.sync === true) {
 			// Error code handling?..
-			execSync(command.command)
+			await async_exec(command.command)
 
 			if (command.finishStatusMessage) {
 				this.showStatusMessage(command.finishStatusMessage)
@@ -273,6 +274,8 @@ export class RunOnSaveExtension {
 	}
 
 	private runVSCodeCommand(command: VSCodeCommand) {
+		this.showChannelMessage(`Running "${command.command}"`)
+
 		if (command.runningStatusMessage) {
 			this.showStatusMessage(command.runningStatusMessage)
 		}

@@ -120,5 +120,8 @@
 		"@types/node": "^8.10.58",
 		"typescript": "^3.3.3",
 		"vscode": "^1.1.30"
+	},
+	"dependencies": {
+		"await-exec": "^0.1.2"
 	}
 }
