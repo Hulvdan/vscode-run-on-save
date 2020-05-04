@@ -1,5 +1,5 @@
 import * as path from 'path'
-import {exec, execSync} from 'child_process'
+import {exec} from 'child_process'
 
 import * as vscode from 'vscode'
 import {encodeCommandLineToBeQuoted, decodeQuotedCommandLine} from './util'
