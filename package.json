@@ -72,6 +72,11 @@
 								"description": "Specify the shell command.",
 								"default": "echo ${file}"
 							},
+							"sync": {
+								"type": "boolean",
+								"description": "Should backend commands run syncronously one after another?",
+								"default": false
+							},
 							"runIn": {
 								"type": "string",
 								"description": "Run command in.",

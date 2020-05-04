@@ -32,12 +32,13 @@ If you prefer running commands in vscode terminal, which keeps message colors an
 | `commands[].match`                | Specify a RegExp source to match file path. E.g.: `\\.scss$` can used to match scss files.
 | `commands[].notMatch`             | Specify a RegExp source, the files whole path match it will be excluded. E.g.: `[\\\\\\/]_[\\w-]+\\.scss$` can be used to exclude scss library files.
 | `commands[].command`              | Specify the shell command to execute. You may include variable substitution like what to do in [VSCode Tasks](https://code.visualstudio.com/docs/editor/tasks#_variable-substitution).
+| `commands[].sync`                 | If `true` next functions won't be called until ending of execution of that command. Only works when `runIn=backend`. See the use case in the sample configuration down below.
 | `commands[].runningStatusMessage` | Specify the status bar message when the shell command begin to run, supports variable substitution too. Only works when `runIn=backend`.
 | `commands[].finishStatusMessage`  | Specify the status bar message after the shell command finished executing, also supports variable substitution. Only works when `runIn=backend`.
 | `commands[].runIn`                |
  - `backend`: Run command silently and show messages in output channel, you can specify runningStatusMessage and finishStatusMessage to give you a little feekback. Choose this when you don't want to be disturbed.
  - `terminal`: Run command in vscode terminal, which keeps message colors. Choose this when you want to get feedback details.
- - `vscode`: Run vscode's command. Choose this if you want to execute vscode's own command or a command of a particular extension.
+ - `vscode`: Run vscode's command silently. Choose this if you want to execute vscode's own command or a command of a particular extension.
 
 
 ### Sample Configuration
@@ -62,12 +63,22 @@ If you prefer running commands in vscode terminal, which keeps message colors an
         },
         {
             "match": ".*\\.py$",
+            "command": "black --line-length 80 ${file} && isort ${file}",
+            "runIn": "backend",
+            "sync": true,
+            "runningStatusMessage": "Formatting ${fileBasename}",
+            "finishStatusMessage": "${fileBasename} formatted"
+        },
+        {
+            "match": ".*\\.py$",
             "command": "python.runLinting",
             "runIn": "vscode"
         }
     ]
 }
 ```
+
+In the sample `"sync": true` property ensures that python formatters (black and isort) will do their work before `python.runLinting` will be called. There would be no guarantee that `python.runLinting` will be done after formatters that could lead to misleading linter information.
 
 
 ### Variable Substitution

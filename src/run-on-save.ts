@@ -1,5 +1,5 @@
 import * as path from 'path'
-import {exec} from 'child_process'
+import {exec, execSync} from 'child_process'
 import * as vscode from 'vscode'
 import {encodeCommandLineToBeQuoted, decodeQuotedCommandLine} from './util'
 
@@ -13,6 +13,7 @@ export interface OriginalCommand {
 	match: string
 	notMatch: string
 	command: string
+	sync: boolean
 	runIn: string
 	runningStatusMessage: string
 	finishStatusMessage: string
@@ -22,6 +23,7 @@ export interface ProcessedCommand {
 	match?: RegExp
 	notMatch?: RegExp
 	command: string
+	sync: boolean
 	runIn: string
 	runningStatusMessage: string
 	finishStatusMessage: string
@@ -32,6 +34,7 @@ export interface BackendCommand {
 	command: string
 	runningStatusMessage: string
 	finishStatusMessage: string
+	sync: boolean
 }
 
 export interface TerminalCommand {
@@ -42,6 +45,8 @@ export interface TerminalCommand {
 export interface VSCodeCommand {
 	runIn: 'vscode'
 	command: string
+	runningStatusMessage: string
+	finishStatusMessage: string
 }
 
 
@@ -64,7 +69,7 @@ export class CommandProcessor {
 		})
 	}
 
-	prepareCommandsForFile (filePath: string): (BackendCommand | TerminalCommand | VSCodeCommand)[] {
+	prepareCommandsForFile(filePath: string): (BackendCommand | TerminalCommand | VSCodeCommand)[] {
 		let filteredCommands = this.filterCommandsForFile(filePath)
 
 		let formattedCommands = filteredCommands.map((command) => {
@@ -73,7 +78,8 @@ export class CommandProcessor {
 					runIn: 'backend',
 					command: this.formatVariables(command.command, filePath, true),
 					runningStatusMessage: this.formatVariables(command.runningStatusMessage, filePath),
-					finishStatusMessage: this.formatVariables(command.finishStatusMessage, filePath)
+					finishStatusMessage: this.formatVariables(command.finishStatusMessage, filePath),
+					sync: command.sync
 				}
 			}
 			else if (command.runIn === 'terminal') {
@@ -231,19 +237,28 @@ export class RunOnSaveExtension {
 			this.showStatusMessage(command.runningStatusMessage)
 		}
 
-		let child = exec(command.command)
-		child.stdout.on('data', data => this.channel.append(data.toString()))
-		child.stderr.on('data', data => this.channel.append(data.toString()))
+		if (command.sync === true) {
+			// Error code handling?..
+			execSync(command.command)
 
-		child.on('exit', (e) => {
-			if (e === 0 && (command).finishStatusMessage) {
-				this.showStatusMessage((command).finishStatusMessage)
+			if (command.finishStatusMessage) {
+				this.showStatusMessage(command.finishStatusMessage)
 			}
+		} else {
+			let child = exec(command.command)
+			child.stdout.on('data', data => this.channel.append(data.toString()))
+			child.stderr.on('data', data => this.channel.append(data.toString()))
 
-			if (e !== 0) {
-				this.channel.show(true)
-			}
-		})
+			child.on('exit', (e) => {
+				if (e === 0 && (command).finishStatusMessage) {
+					this.showStatusMessage((command).finishStatusMessage)
+				}
+
+				if (e !== 0) {
+					this.channel.show(true)
+				}
+			})
+		}
 	}
 
 	private runTerminalCommand(command: TerminalCommand) {
@@ -258,7 +273,15 @@ export class RunOnSaveExtension {
 	}
 
 	private runVSCodeCommand(command: VSCodeCommand) {
+		if (command.runningStatusMessage) {
+			this.showStatusMessage(command.runningStatusMessage)
+		}
+
 		vscode.commands.executeCommand(command.command);
+
+		if (command.finishStatusMessage) {
+			this.showStatusMessage(command.finishStatusMessage)
+		}
 	}
 
 	private createTerminal(): vscode.Terminal {
