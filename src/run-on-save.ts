@@ -92,9 +92,7 @@ export class CommandProcessor {
 			else {
 				return <VSCodeCommand>{
 					runIn: 'vscode',
-					command: this.formatVariables(command.command, filePath, true),
-					runningStatusMessage: this.formatVariables(command.runningStatusMessage, filePath),
-					finishStatusMessage: this.formatVariables(command.finishStatusMessage, filePath)
+					command: this.formatVariables(command.command, filePath, true)
 				}
 			}
 		})
@@ -274,11 +272,8 @@ export class RunOnSaveExtension {
 	}
 
 	private runVSCodeCommand(command: VSCodeCommand) {
+		// finishStatusMessage have to be hooked to exit of command execution
 		this.showChannelMessage(`Running "${command.command}"`)
-
-		if (command.runningStatusMessage) {
-			this.showStatusMessage(command.runningStatusMessage)
-		}
 
 		vscode.commands.executeCommand(command.command);
 
